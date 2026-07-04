@@ -1,0 +1,1388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lakshmikanth Reddy | Personal Portfolio</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chess.js for move validation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'sans-serif'],
+                    },
+                    colors: {
+                        primary: {
+                            50: '#f5f3ff',
+                            100: '#ede9fe',
+                            200: '#ddd6fe',
+                            500: '#8b5cf6',
+                            600: '#7c3aed',
+                            700: '#6d28d9',
+                        },
+                        secondary: {
+                            500: '#10b981',
+                            600: '#059669',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .tab-content {
+            display: none;
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out;
+        }
+        .tab-content.active {
+            display: block;
+            opacity: 1;
+        }
+        .gradient-bg {
+            background: radial-gradient(circle at top right, rgba(139, 92, 246, 0.1) 0%, transparent 60%),
+                        radial-gradient(circle at bottom left, rgba(16, 185, 129, 0.08) 0%, transparent 60%);
+        }
+        /* Custom Chessboard Styling */
+        .chess-square {
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            cursor: pointer;
+            user-select: none;
+        }
+        .chess-piece {
+            font-size: 2.5rem;
+            line-height: 1;
+            z-index: 10;
+            transition: transform 0.15s ease-in-out;
+        }
+        @media (max-width: 640px) {
+            .chess-piece {
+                font-size: 1.6rem;
+            }
+        }
+        .chess-piece:hover {
+            transform: scale(1.15);
+        }
+        .square-light-emerald { background-color: #f0fdf4; color: #14532d; }
+        .square-dark-emerald { background-color: #16a34a; color: #f0fdf4; }
+        .square-light-violet { background-color: #faf5ff; color: #581c87; }
+        .square-dark-violet { background-color: #7c3aed; color: #faf5ff; }
+        
+        .square-selected {
+            box-shadow: inset 0 0 0 4px #e11d48 !important;
+        }
+        .square-valid-dest::after {
+            content: '';
+            width: 30%;
+            height: 30%;
+            background-color: rgba(14, 165, 233, 0.6);
+            border-radius: 50%;
+            position: absolute;
+            z-index: 5;
+        }
+        /* Pulse overlay when AI is thinking */
+        .ai-thinking-overlay {
+            background-color: rgba(15, 23, 42, 0.4);
+            backdrop-filter: blur(1px);
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen font-sans antialiased gradient-bg flex flex-col justify-between">
+
+    <!-- Header Navigation -->
+    <header class="sticky top-0 z-50 backdrop-blur-md bg-slate-950/80 border-b border-slate-800">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <!-- Brand Logo -->
+                <div class="flex items-center space-x-2">
+                    <span class="text-2xl font-black bg-gradient-to-r from-primary-500 to-secondary-500 bg-clip-text text-transparent tracking-tight">LR.</span>
+                    <span class="font-bold text-slate-200 hidden sm:block text-sm tracking-wide uppercase">Lakshmikanth Reddy</span>
+                </div>
+
+                <!-- Desktop Nav Tabs -->
+                <nav class="flex space-x-1 bg-slate-900 p-1 rounded-xl border border-slate-800 overflow-x-auto max-w-full">
+                    <button onclick="switchTab('home')" id="tab-btn-home" class="tab-btn shrink-0 px-3 py-1.5 text-xs sm:text-sm font-medium rounded-lg text-primary-500 bg-slate-800/80 transition-all duration-200">
+                        <i class="fa-solid fa-house mr-1 sm:mr-1.5"></i>Home
+                    </button>
+                    <button onclick="switchTab('about')" id="tab-btn-about" class="tab-btn shrink-0 px-3 py-1.5 text-xs sm:text-sm font-medium rounded-lg text-slate-400 hover:text-slate-200 transition-all duration-200">
+                        <i class="fa-solid fa-user mr-1 sm:mr-1.5"></i>About
+                    </button>
+                    <button onclick="switchTab('routine')" id="tab-btn-routine" class="tab-btn shrink-0 px-3 py-1.5 text-xs sm:text-sm font-medium rounded-lg text-slate-400 hover:text-slate-200 transition-all duration-200">
+                        <i class="fa-solid fa-calendar-day mr-1 sm:mr-1.5"></i>Routine
+                    </button>
+                    <button onclick="switchTab('passions')" id="tab-btn-passions" class="tab-btn shrink-0 px-3 py-1.5 text-xs sm:text-sm font-medium rounded-lg text-slate-400 hover:text-slate-200 transition-all duration-200">
+                        <i class="fa-solid fa-heart mr-1 sm:mr-1.5"></i>Passions
+                    </button>
+                    <button onclick="switchTab('gaming')" id="tab-btn-gaming" class="tab-btn shrink-0 px-3 py-1.5 text-xs sm:text-sm font-medium rounded-lg text-slate-400 hover:text-slate-200 transition-all duration-200">
+                        <i class="fa-solid fa-gamepad mr-1 sm:mr-1.5"></i>Gaming
+                    </button>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <!-- Custom Notification Popup -->
+    <div id="toast-notification" class="fixed bottom-6 right-6 z-50 bg-slate-900 border border-slate-800 text-slate-200 px-4 py-3 rounded-xl shadow-2xl flex items-center space-x-3 transition-all duration-300 transform translate-y-20 opacity-0 pointer-events-none">
+        <span id="toast-icon" class="text-emerald-500 text-lg"><i class="fa-solid fa-circle-check"></i></span>
+        <span id="toast-message" class="text-sm font-medium">Link copied to clipboard!</span>
+    </div>
+
+    <!-- Main Content Area -->
+    <main class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 w-full flex-grow">
+
+        <!-- ================= HOME TAB ================= -->
+        <section id="tab-home" class="tab-content active space-y-12">
+            <!-- Hero Landing Card -->
+            <div class="relative bg-slate-900/40 rounded-3xl p-6 sm:p-12 border border-slate-800 overflow-hidden backdrop-blur-sm shadow-xl">
+                <!-- Background ambient lights -->
+                <div class="absolute top-0 right-0 w-72 h-72 bg-primary-500/10 rounded-full blur-3xl -z-10"></div>
+                <div class="absolute bottom-0 left-0 w-72 h-72 bg-secondary-500/10 rounded-full blur-3xl -z-10"></div>
+
+                <div class="max-w-3xl space-y-6">
+                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-primary-500/10 text-primary-400 border border-primary-500/20">
+                        🎓 8th Grade Student @ Carmel Academy
+                    </span>
+                    <h1 class="text-4xl sm:text-6xl font-extrabold tracking-tight text-white leading-tight">
+                        Hey! I'm <br class="sm:hidden">
+                        <span class="bg-gradient-to-r from-primary-400 via-violet-400 to-secondary-400 bg-clip-text text-transparent">
+                            Lakshmikanth Reddy
+                        </span>
+                    </h1>
+                    <p class="text-base sm:text-lg text-slate-400 leading-relaxed max-w-2xl">
+                        Welcome to my small corner of the internet! I am an 8th-grade student at Carmel Academy. I'm a quiet, caring guy who loves playing cricket, diving deep into finance concepts, and gaming with friends.
+                    </p>
+                    
+                    <!-- Quick Stats Badges -->
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4">
+                        <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-800 text-center">
+                            <i class="fa-solid fa-graduation-cap text-primary-500 text-xl mb-2"></i>
+                            <p class="text-xs text-slate-500 uppercase tracking-widest font-semibold">Grade</p>
+                            <p class="text-base font-bold text-slate-200">8th Standard</p>
+                        </div>
+                        <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-800 text-center">
+                            <i class="fa-solid fa-school text-secondary-500 text-xl mb-2"></i>
+                            <p class="text-xs text-slate-500 uppercase tracking-widest font-semibold">School</p>
+                            <p class="text-base font-bold text-slate-200">Carmel Academy</p>
+                        </div>
+                        <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-800 text-center">
+                            <i class="fa-solid fa-baseball-bat-ball text-amber-500 text-xl mb-2"></i>
+                            <p class="text-xs text-slate-500 uppercase tracking-widest font-semibold">Sport</p>
+                            <p class="text-base font-bold text-slate-200">Cricket</p>
+                        </div>
+                        <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-800 text-center">
+                            <i class="fa-solid fa-gamepad text-pink-500 text-xl mb-2"></i>
+                            <p class="text-xs text-slate-500 uppercase tracking-widest font-semibold">Hobbies</p>
+                            <p class="text-base font-bold text-slate-200">Chess & Gaming</p>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-wrap gap-4 pt-4">
+                        <button onclick="switchTab('gaming')" class="px-6 py-3 bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-500 hover:to-primary-600 text-white font-medium rounded-xl transition duration-200 shadow-lg shadow-primary-900/20 text-sm">
+                            Play Chess With Me! <i class="fa-solid fa-chess-knight ml-2 text-sm"></i>
+                        </button>
+                        <button onclick="switchTab('about')" class="px-6 py-3 bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium rounded-xl transition duration-200 text-sm border border-slate-700">
+                            More About Me
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Overview Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Highlight Quote Card -->
+                <div class="bg-slate-900/30 p-6 sm:p-8 rounded-2xl border border-slate-800/80 flex items-start space-x-4">
+                    <div class="bg-primary-500/10 p-3 rounded-lg text-primary-400 shrink-0">
+                        <i class="fa-solid fa-quote-left text-xl"></i>
+                    </div>
+                    <div class="space-y-2">
+                        <h3 class="font-bold text-slate-200">A Quiet Spark</h3>
+                        <p class="text-sm text-slate-400 leading-relaxed">
+                            "I might start off as a very shy guy when we first meet, but once we get to know each other, I am extremely close, loyal, and caring. I believe in quiet observation and strong friendships."
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Fast Fact Card -->
+                <div class="bg-slate-900/30 p-6 sm:p-8 rounded-2xl border border-slate-800/80 flex items-start space-x-4">
+                    <div class="bg-secondary-500/10 p-3 rounded-lg text-secondary-400 shrink-0">
+                        <i class="fa-solid fa-arrow-trend-up text-xl"></i>
+                    </div>
+                    <div class="space-y-2">
+                        <h3 class="font-bold text-slate-200">Future Financial Mind</h3>
+                        <p class="text-sm text-slate-400 leading-relaxed">
+                            While most 8th graders only think about video games, I love exploring the fundamentals of finance. Understanding how investments, compounding, and savings work keeps me incredibly motivated!
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= ABOUT ME TAB ================= -->
+        <section id="tab-about" class="tab-content space-y-8">
+            <div class="max-w-3xl mx-auto space-y-8">
+                <!-- Title -->
+                <div class="text-center space-y-2">
+                    <h2 class="text-3xl font-extrabold text-white">Who is Lakshmikanth?</h2>
+                    <p class="text-slate-400 text-sm sm:text-base">Get to know the personality behind the name.</p>
+                    <div class="h-1 w-20 bg-primary-500 mx-auto rounded-full mt-4"></div>
+                </div>
+
+                <!-- Bio Cards -->
+                <div class="bg-slate-900/40 p-6 sm:p-8 rounded-2xl border border-slate-800 space-y-6">
+                    <h3 class="text-xl font-bold text-white flex items-center">
+                        <span class="mr-2 text-primary-400"><i class="fa-solid fa-user-circle"></i></span>
+                        My Personality traits
+                    </h3>
+                    
+                    <!-- Traits breakdown -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div class="bg-slate-950 p-4 rounded-xl border border-slate-800/60">
+                            <div class="flex items-center space-x-3 text-amber-400 font-bold mb-2">
+                                <i class="fa-solid fa-ghost"></i>
+                                <span>Quietly Shy at First</span>
+                            </div>
+                            <p class="text-xs sm:text-sm text-slate-400 leading-relaxed">
+                                I don't talk a lot when I first meet someone. I like to listen and understand my surroundings. This is just my natural way of taking things in.
+                            </p>
+                        </div>
+
+                        <div class="bg-slate-950 p-4 rounded-xl border border-slate-800/60">
+                            <div class="flex items-center space-x-3 text-primary-400 font-bold mb-2">
+                                <i class="fa-solid fa-handshake"></i>
+                                <span>Super Close Friend later</span>
+                            </div>
+                            <p class="text-xs sm:text-sm text-slate-400 leading-relaxed">
+                                Once the ice is broken and I get to know you, I'll be one of the closest and most interactive friends you can count on!
+                            </p>
+                        </div>
+
+                        <div class="bg-slate-950 p-4 rounded-xl border border-slate-800/60 sm:col-span-2">
+                            <div class="flex items-center space-x-3 text-emerald-400 font-bold mb-2">
+                                <i class="fa-solid fa-heart"></i>
+                                <span>Extremely Caring</span>
+                            </div>
+                            <p class="text-xs sm:text-sm text-slate-400 leading-relaxed">
+                                I care deeply for my family and friends. Helping others, checking up on them, and making sure my friends are doing well is very important to me.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Academic Life Box -->
+                <div class="bg-slate-900/40 p-6 sm:p-8 rounded-2xl border border-slate-800 space-y-4">
+                    <h3 class="text-xl font-bold text-white flex items-center">
+                        <span class="mr-2 text-secondary-400"><i class="fa-solid fa-school-flag"></i></span>
+                        Carmel Academy Life
+                    </h3>
+                    <p class="text-sm sm:text-base text-slate-300 leading-relaxed">
+                        I am currently studying in the **8th standard** at **Carmel Academy**. It's a wonderful school where I spend my mornings learning exciting concepts, interacting with classmate friends, and preparing for my future. Balancing my academics, morning schedules, afternoon studies, and personal interests helps me grow daily.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= ROUTINE TAB ================= -->
+        <section id="tab-routine" class="tab-content space-y-8">
+            <div class="max-w-3xl mx-auto">
+                <!-- Title -->
+                <div class="text-center space-y-2 mb-10">
+                    <h2 class="text-3xl font-extrabold text-white">My Daily Routine</h2>
+                    <p class="text-slate-400 text-sm sm:text-base">How I spend my typical day balancing school, passions, and rest.</p>
+                    <div class="h-1 w-20 bg-secondary-500 mx-auto rounded-full mt-4"></div>
+                </div>
+
+                <!-- Interactive Routine Slider / Progress Tracker -->
+                <div class="bg-slate-900/40 p-6 sm:p-8 rounded-2xl border border-slate-800 space-y-8 mb-8">
+                    <h3 class="text-base sm:text-lg font-semibold text-slate-200 text-center">Interactive Routine Journey</h3>
+                    
+                    <!-- Dynamic Progress Line -->
+                    <div class="relative flex items-center justify-between">
+                        <div class="absolute left-0 right-0 top-1/2 h-1 bg-slate-800 -translate-y-1/2 z-0"></div>
+                        <div id="routine-progress-bar" class="absolute left-0 top-1/2 h-1 bg-gradient-to-r from-primary-500 to-secondary-500 -translate-y-1/2 z-0 transition-all duration-300" style="width: 0%"></div>
+                        
+                        <!-- Timeline nodes -->
+                        <button onclick="setActiveHour(1)" id="hour-node-1" class="relative z-10 w-8 h-8 rounded-full bg-slate-800 text-slate-400 font-bold text-xs flex items-center justify-center hover:bg-primary-500 hover:text-white transition-all duration-200">1</button>
+                        <button onclick="setActiveHour(2)" id="hour-node-2" class="relative z-10 w-8 h-8 rounded-full bg-slate-800 text-slate-400 font-bold text-xs flex items-center justify-center hover:bg-primary-500 hover:text-white transition-all duration-200">2</button>
+                        <button onclick="setActiveHour(3)" id="hour-node-3" class="relative z-10 w-8 h-8 rounded-full bg-slate-800 text-slate-400 font-bold text-xs flex items-center justify-center hover:bg-primary-500 hover:text-white transition-all duration-200">3</button>
+                        <button onclick="setActiveHour(4)" id="hour-node-4" class="relative z-10 w-8 h-8 rounded-full bg-slate-800 text-slate-400 font-bold text-xs flex items-center justify-center hover:bg-primary-500 hover:text-white transition-all duration-200">4</button>
+                        <button onclick="setActiveHour(5)" id="hour-node-5" class="relative z-10 w-8 h-8 rounded-full bg-slate-800 text-slate-400 font-bold text-xs flex items-center justify-center hover:bg-primary-500 hover:text-white transition-all duration-200">5</button>
+                        <button onclick="setActiveHour(6)" id="hour-node-6" class="relative z-10 w-8 h-8 rounded-full bg-slate-800 text-slate-400 font-bold text-xs flex items-center justify-center hover:bg-primary-500 hover:text-white transition-all duration-200">6</button>
+                    </div>
+
+                    <!-- Dynamic Card Detail -->
+                    <div class="bg-slate-950 p-6 rounded-xl border border-slate-800 text-center min-h-[160px] flex flex-col justify-center items-center space-y-2">
+                        <div id="routine-icon" class="text-3xl text-primary-400 mb-2"></div>
+                        <h4 id="routine-title" class="font-extrabold text-white text-lg"></h4>
+                        <p id="routine-desc" class="text-sm text-slate-400 max-w-md"></p>
+                    </div>
+                </div>
+
+                <!-- Static List Timeline (fallback for scanning) -->
+                <div class="space-y-4">
+                    <h3 class="text-lg font-bold text-white">Full Timeline View</h3>
+                    
+                    <div class="relative border-l border-slate-800 pl-6 ml-3 space-y-8">
+                        <!-- Morning -->
+                        <div class="relative">
+                            <span class="absolute -left-9 bg-primary-600 w-6 h-6 rounded-full flex items-center justify-center text-xs text-white">🌅</span>
+                            <div class="bg-slate-900/30 p-4 rounded-xl border border-slate-800">
+                                <span class="text-xs font-semibold text-primary-400">Morning (Around 8:00 AM)</span>
+                                <h4 class="font-bold text-slate-200">Off to Carmel Academy</h4>
+                                <p class="text-sm text-slate-400 mt-1">Starting my day excited for class. School hours fly by with math, sciences, and catching up with good friends.</p>
+                            </div>
+                        </div>
+
+                        <!-- Evening Back -->
+                        <div class="relative">
+                            <span class="absolute -left-9 bg-emerald-600 w-6 h-6 rounded-full flex items-center justify-center text-xs text-white">🌇</span>
+                            <div class="bg-slate-900/30 p-4 rounded-xl border border-slate-800">
+                                <span class="text-xs font-semibold text-emerald-400">Late Afternoon / Evening</span>
+                                <h4 class="font-bold text-slate-200">Returning Home & Playtime</h4>
+                                <p class="text-sm text-slate-400 mt-1">Coming back from Carmel Academy feeling accomplished. I immediately drop my bag, rest for a minute, and head out to play cricket for some fresh air!</p>
+                            </div>
+                        </div>
+
+                        <!-- Studies & Homework -->
+                        <div class="relative">
+                            <span class="absolute -left-9 bg-purple-600 w-6 h-6 rounded-full flex items-center justify-center text-xs text-white">📚</span>
+                            <div class="bg-slate-900/30 p-4 rounded-xl border border-slate-800">
+                                <span class="text-xs font-semibold text-purple-400">Evening Study Hours</span>
+                                <h4 class="font-bold text-slate-200">Studies & Homework Completion</h4>
+                                <p class="text-sm text-slate-400 mt-1">Academics are very important to me. I spend a couple of dedicated hours completing all school homework tasks and reading about finance topics.</p>
+                            </div>
+                        </div>
+
+                        <!-- Eat and Game -->
+                        <div class="relative">
+                            <span class="absolute -left-9 bg-pink-600 w-6 h-6 rounded-full flex items-center justify-center text-xs text-white">🎮</span>
+                            <div class="bg-slate-900/30 p-4 rounded-xl border border-slate-800">
+                                <span class="text-xs font-semibold text-pink-400">Night Relaxation</span>
+                                <h4 class="font-bold text-slate-200">Dinner & Video Games</h4>
+                                <p class="text-sm text-slate-400 mt-1">After a delicious home-cooked dinner, it's finally time to boot up some video games! It's my favorite way to hang out with friends online and unwind.</p>
+                            </div>
+                        </div>
+
+                        <!-- Sleep -->
+                        <div class="relative">
+                            <span class="absolute -left-9 bg-slate-600 w-6 h-6 rounded-full flex items-center justify-center text-xs text-white">😴</span>
+                            <div class="bg-slate-900/30 p-4 rounded-xl border border-slate-800">
+                                <span class="text-xs font-semibold text-slate-400">Late Night</span>
+                                <h4 class="font-bold text-slate-200">Restful Sleep</h4>
+                                <p class="text-sm text-slate-400 mt-1">Time to turn off all screens and fall asleep, recharging my energy for another bright school day tomorrow.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= PASSIONS TAB ================= -->
+        <section id="tab-passions" class="tab-content space-y-12">
+            <!-- Cricket Section -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch">
+                <div class="bg-slate-900/40 p-6 sm:p-8 rounded-2xl border border-slate-800 flex flex-col justify-between space-y-6">
+                    <div class="space-y-4">
+                        <div class="flex items-center space-x-3 text-amber-500">
+                            <span class="text-3xl"><i class="fa-solid fa-baseball-bat-ball"></i></span>
+                            <h3 class="text-2xl font-bold text-white">My Love for Cricket</h3>
+                        </div>
+                        <p class="text-sm sm:text-base text-slate-400 leading-relaxed">
+                            Cricket is my absolute favorite sport. Whether it is bowling an immaculate delivery or smashing a boundary, I spend every evening trying to refine my batting stance and understanding team strategy. I love keeping track of runs and wickets.
+                        </p>
+                    </div>
+
+                    <!-- Interactive Cricket Scorer (Fun Mini Widget) -->
+                    <div class="bg-slate-950 p-4 rounded-xl border border-slate-800/80 space-y-4">
+                        <h4 class="text-xs uppercase font-extrabold tracking-widest text-slate-400 text-center">Interactive Match Scorer</h4>
+                        
+                        <div class="flex items-center justify-around bg-slate-900 p-3 rounded-lg border border-slate-800">
+                            <div class="text-center">
+                                <p class="text-xs text-slate-500">Runs</p>
+                                <span id="cricket-runs" class="text-2xl font-extrabold text-white">0</span>
+                            </div>
+                            <div class="text-xl text-slate-600">/</div>
+                            <div class="text-center">
+                                <p class="text-xs text-slate-500">Wickets</p>
+                                <span id="cricket-wickets" class="text-2xl font-extrabold text-red-500">0</span>
+                            </div>
+                            <div class="text-xl text-slate-600">|</div>
+                            <div class="text-center">
+                                <p class="text-xs text-slate-500">Overs</p>
+                                <span id="cricket-overs" class="text-xl font-bold text-slate-300">0.0</span>
+                            </div>
+                        </div>
+
+                        <!-- Buttons for action -->
+                        <div class="grid grid-cols-4 gap-2">
+                            <button onclick="addRuns(1)" class="py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-md border border-slate-700">+1 Run</button>
+                            <button onclick="addRuns(4)" class="py-1 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 text-xs font-semibold rounded-md border border-amber-500/20">+4 boundary</button>
+                            <button onclick="addRuns(6)" class="py-1 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 text-xs font-semibold rounded-md border border-emerald-500/20">+6 maximum</button>
+                            <button onclick="addWicket()" class="py-1 bg-red-500/10 hover:bg-red-500/20 text-red-400 text-xs font-semibold rounded-md border border-red-500/20">OUT</button>
+                        </div>
+                        <div class="text-center">
+                            <button onclick="resetScorer()" class="text-xs text-slate-500 hover:text-slate-300 underline">Reset Scorecard</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Finance Section -->
+                <div class="bg-slate-900/40 p-6 sm:p-8 rounded-2xl border border-slate-800 flex flex-col justify-between space-y-6">
+                    <div class="space-y-4">
+                        <div class="flex items-center space-x-3 text-emerald-500">
+                            <span class="text-3xl"><i class="fa-solid fa-coins"></i></span>
+                            <h3 class="text-2xl font-bold text-white">Passion for Finance</h3>
+                        </div>
+                        <p class="text-sm sm:text-base text-slate-400 leading-relaxed">
+                            I am absolutely fascinated by money and investment concepts. Knowing how early savings turn into large wealth over time using compound interest is like magic to me. I enjoy learning about savings accounts, inflation, budgeting, and the basics of stock markets.
+                        </p>
+                    </div>
+
+                    <!-- Interactive Compound Interest Savings Goal Widget -->
+                    <div class="bg-slate-950 p-4 rounded-xl border border-slate-800/80 space-y-4">
+                        <h4 class="text-xs uppercase font-extrabold tracking-widest text-slate-400 text-center">Interactive Savings Calculator</h4>
+                        
+                        <div class="space-y-3">
+                            <div>
+                                <label class="block text-xs text-slate-400 mb-1">Monthly Pocket Money / Savings (₹)</label>
+                                <input type="number" id="finance-monthly" value="500" class="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-sm text-slate-200 focus:outline-none focus:border-emerald-500">
+                            </div>
+                            <div>
+                                <label class="block text-xs text-slate-400 mb-1">Duration (Years)</label>
+                                <input type="number" id="finance-years" value="5" class="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-sm text-slate-200 focus:outline-none focus:border-emerald-500">
+                            </div>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-xs text-slate-400 mb-1">Interest Rate (%)</label>
+                                    <input type="number" id="finance-rate" value="10" class="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-sm text-slate-200 focus:outline-none focus:border-emerald-500">
+                                </div>
+                                <div class="flex flex-col justify-end">
+                                    <button onclick="calculateSavings()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold py-2 px-4 rounded-lg transition-all duration-150">Calculate Goal</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Result Box -->
+                        <div class="bg-slate-900 p-3 rounded-lg border border-slate-800 text-center">
+                            <span class="text-xs text-slate-500">Estimated Total Future Balance</span>
+                            <p id="finance-total" class="text-xl font-black text-emerald-400 mt-0.5">₹38,710</p>
+                            <span class="text-[10px] text-slate-600 italic">Compounded monthly</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= GAMING TAB ================= -->
+        <section id="tab-gaming" class="tab-content space-y-12">
+            <!-- Intro / Invite Section -->
+            <div class="relative bg-gradient-to-r from-slate-900/60 to-purple-950/20 rounded-3xl p-6 sm:p-10 border border-slate-800 overflow-hidden backdrop-blur-sm shadow-xl">
+                <div class="max-w-3xl space-y-4">
+                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-violet-500/10 text-violet-400 border border-violet-500/20">
+                        ♟️ Play & Schedule Chess
+                    </span>
+                    <h2 class="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
+                        Challenge Lakshmikanth or Play the AI!
+                    </h2>
+                    <p class="text-sm sm:text-base text-slate-400 max-w-2xl">
+                        I am a big fan of tactical strategies, especially Chess. Use the fully-playable Chessboard below. Switch the Opponent mode to **Computer AI** to play against the computer if your friends are away!
+                    </p>
+                    
+                    <!-- Invite Options -->
+                    <div class="flex flex-wrap gap-4 pt-2">
+                        <button onclick="copyChallengeLink()" class="px-5 py-2.5 bg-violet-600 hover:bg-violet-500 text-white font-semibold rounded-xl text-xs sm:text-sm flex items-center space-x-2 transition duration-150 shadow-lg shadow-violet-900/30">
+                            <i class="fa-solid fa-copy"></i>
+                            <span>Copy Custom Chess Invitation</span>
+                        </button>
+                        <a href="#scheduler-form" class="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold rounded-xl text-xs sm:text-sm flex items-center space-x-2 border border-slate-700 transition duration-150">
+                            <i class="fa-solid fa-calendar-plus text-primary-400"></i>
+                            <span>Schedule Game Calendar Invite</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chess Gameplay & Board Control Panel -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                <!-- Board Side -->
+                <div class="lg:col-span-7 bg-slate-900/40 p-4 sm:p-6 rounded-2xl border border-slate-800 flex flex-col items-center space-y-4">
+                    
+                    <!-- Game Info Header -->
+                    <div class="w-full flex items-center justify-between border-b border-slate-800 pb-3 text-sm flex-wrap gap-2">
+                        <div class="flex items-center space-x-2">
+                            <div id="status-dot" class="w-3.5 h-3.5 rounded-full bg-emerald-500 animate-pulse"></div>
+                            <span id="turn-indicator" class="font-bold text-slate-200">White's Turn</span>
+                        </div>
+                        <div class="flex items-center space-x-3">
+                            <label class="text-xs text-slate-400">Theme:</label>
+                            <select id="board-theme" onchange="changeBoardTheme()" class="bg-slate-950 text-slate-300 text-xs rounded border border-slate-800 p-1.5 focus:outline-none focus:border-violet-500">
+                                <option value="violet">Deep Violet</option>
+                                <option value="emerald">Classic Emerald</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- The Chessboard Container -->
+                    <div class="w-full max-w-[450px] relative">
+                        <div id="chessboard" class="grid grid-cols-8 gap-0 border-4 border-slate-800 rounded-xl overflow-hidden shadow-2xl relative">
+                            <!-- Populated Dynamically by Javascript -->
+                        </div>
+                        <!-- Thinking Overlay -->
+                        <div id="thinking-overlay" class="absolute inset-0 rounded-xl ai-thinking-overlay flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-200 z-30">
+                            <div class="bg-slate-900/95 border border-slate-800 px-4 py-3 rounded-xl flex items-center space-x-3 shadow-2xl">
+                                <svg class="animate-spin h-5 w-5 text-violet-500" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                <span class="text-xs font-semibold text-slate-200 tracking-wider uppercase">Computer is thinking...</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Bottom Controls -->
+                    <div class="w-full grid grid-cols-3 gap-2 pt-2">
+                        <button onclick="resetChessGame()" class="py-2 px-3 bg-red-600/10 hover:bg-red-600/20 text-red-400 text-xs font-bold rounded-lg border border-red-500/20 transition duration-150 flex items-center justify-center space-x-1">
+                            <i class="fa-solid fa-rotate-left"></i>
+                            <span>Reset Board</span>
+                        </button>
+                        <button onclick="flipChessBoard()" class="py-2 px-3 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-lg border border-slate-700 transition duration-150 flex items-center justify-center space-x-1">
+                            <i class="fa-solid fa-arrows-rotate"></i>
+                            <span>Flip Board</span>
+                        </button>
+                        <button onclick="undoChessMove()" id="btn-undo" class="py-2 px-3 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-lg border border-slate-700 transition duration-150 flex items-center justify-center space-x-1">
+                            <i class="fa-solid fa-arrow-left"></i>
+                            <span>Undo</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Game Settings & Schedule Invite Form Side -->
+                <div class="lg:col-span-5 space-y-6">
+                    <!-- Game Settings Control Box -->
+                    <div class="bg-slate-900/40 p-5 rounded-2xl border border-slate-800 space-y-4">
+                        <h3 class="text-lg font-bold text-slate-200 flex items-center">
+                            <span class="mr-2 text-violet-400"><i class="fa-solid fa-sliders"></i></span>
+                            Match Matchmaker Settings
+                        </h3>
+                        <div class="space-y-3">
+                            <div>
+                                <label class="block text-xs text-slate-400 mb-1 font-semibold">Opponent Mode</label>
+                                <select id="opponent-mode" onchange="changeOpponentMode()" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-xs text-slate-200 focus:outline-none focus:border-violet-500">
+                                    <option value="ai">Computer AI (Play Solo)</option>
+                                    <option value="local">Local Friend (Pass & Play)</option>
+                                </select>
+                            </div>
+                            
+                            <div id="ai-settings-sub" class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-xs text-slate-400 mb-1 font-semibold">Play As</label>
+                                    <select id="player-color-choice" onchange="changePlayerColor()" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-xs text-slate-200 focus:outline-none focus:border-violet-500">
+                                        <option value="w">White (First Move)</option>
+                                        <option value="b">Black</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs text-slate-400 mb-1 font-semibold">AI Difficulty</label>
+                                    <select id="ai-difficulty" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-xs text-slate-200 focus:outline-none focus:border-violet-500">
+                                        <option value="easy">Easy (Quick)</option>
+                                        <option value="medium" selected>Medium (Strategic)</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Game Move Log & Info -->
+                    <div class="bg-slate-900/40 p-5 rounded-2xl border border-slate-800 space-y-4">
+                        <h3 class="text-lg font-bold text-slate-200 flex items-center">
+                            <span class="mr-2 text-violet-400"><i class="fa-solid fa-history"></i></span>
+                            Live Move Log
+                        </h3>
+                        <div id="chess-status-msg" class="bg-slate-950/80 p-3 rounded-lg text-xs font-semibold border border-slate-800 text-center text-emerald-400">
+                            Game initialized. White starts!
+                        </div>
+                        <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 h-32 overflow-y-auto">
+                            <ol id="chess-move-list" class="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-slate-400 font-mono">
+                                <!-- Populated dynamically -->
+                            </ol>
+                        </div>
+                    </div>
+
+                    <!-- Scheduler Form -->
+                    <div id="scheduler-form" class="bg-slate-900/40 p-5 rounded-2xl border border-slate-800 space-y-4">
+                        <h3 class="text-lg font-bold text-slate-200 flex items-center">
+                            <span class="mr-2 text-primary-400"><i class="fa-solid fa-calendar-check"></i></span>
+                            Match Scheduler
+                        </h3>
+                        <p class="text-xs text-slate-400">
+                            Coordinate a match! Fill this out to add the chess game automatically to your calendar and download a schedule invite.
+                        </p>
+
+                        <div class="space-y-3">
+                            <div>
+                                <label class="block text-xs text-slate-400 mb-1 font-semibold">Your Name</label>
+                                <input type="text" id="sched-name" placeholder="Enter your name" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-xs text-slate-200 focus:outline-none focus:border-violet-500">
+                            </div>
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-xs text-slate-400 mb-1 font-semibold">Date</label>
+                                    <input type="date" id="sched-date" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-xs text-slate-200 focus:outline-none focus:border-violet-500">
+                                </div>
+                                <div>
+                                    <label class="block text-xs text-slate-400 mb-1 font-semibold">Time</label>
+                                    <input type="time" id="sched-time" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-xs text-slate-200 focus:outline-none focus:border-violet-500">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-xs text-slate-400 mb-1 font-semibold">Where to Play</label>
+                                <select id="sched-platform" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-xs text-slate-200 focus:outline-none focus:border-violet-500">
+                                    <option value="This Portfolio Website">Play locally on this computer screen</option>
+                                    <option value="Chess.com">Online on Chess.com</option>
+                                    <option value="Lichess.org">Online on Lichess.org</option>
+                                    <option value="Carmel Academy Playground">Board at Carmel Academy Playground</option>
+                                </select>
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2">
+                                <button onclick="generateGoogleCalendarInvite()" class="w-full bg-gradient-to-r from-violet-600 to-primary-700 hover:from-violet-500 hover:to-primary-600 text-white font-bold py-2 px-3 rounded-lg text-xs flex items-center justify-center space-x-1.5 transition duration-150">
+                                    <i class="fa-brands fa-google"></i>
+                                    <span>Google Calendar</span>
+                                </button>
+                                <button onclick="downloadICSInvite()" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold py-2 px-3 rounded-lg text-xs flex items-center justify-center space-x-1.5 border border-slate-700 transition duration-150">
+                                    <i class="fa-solid fa-file-export"></i>
+                                    <span>Download .ics File</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- GitHub Deployment Help Section (Collapsible) -->
+    <section class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pb-12 w-full">
+        <div class="bg-slate-900/20 border border-slate-800 rounded-2xl overflow-hidden">
+            <button onclick="toggleDeployGuide()" class="w-full px-6 py-4 flex items-center justify-between text-left hover:bg-slate-900/40 transition duration-150">
+                <div class="flex items-center space-x-3 text-primary-400">
+                    <i class="fa-brands fa-github text-xl"></i>
+                    <span class="font-bold text-slate-200 text-sm">How to deploy this website on GitHub Pages? (Click to view)</span>
+                </div>
+                <span id="guide-arrow" class="text-slate-500 transition-transform duration-200"><i class="fa-solid fa-chevron-down"></i></span>
+            </button>
+            <div id="deploy-guide" class="hidden px-6 pb-6 border-t border-slate-800 bg-slate-900/10 text-slate-400 text-xs sm:text-sm space-y-4 pt-4 leading-relaxed">
+                <p>Deploying this website on GitHub is free, easy, and only takes a few steps:</p>
+                <ol class="list-decimal pl-5 space-y-2">
+                    <li>Create a free account on <strong class="text-slate-200">GitHub.com</strong> if you don't have one already.</li>
+                    <li>Create a new repository named <strong class="text-slate-200">lakshmikanth-reddy</strong> or <strong class="text-slate-200">my-portfolio</strong>. Make it <strong class="text-primary-400">Public</strong>.</li>
+                    <li>Inside your repository, create a new file named exactly <strong class="text-emerald-400">index.html</strong>.</li>
+                    <li>Copy all the code from this document and paste it inside that file, then save (commit) the file.</li>
+                    <li>Go to the <strong class="text-slate-200">Settings</strong> tab of your repository. Scroll down on the left sidebar to find the <strong class="text-slate-200">Pages</strong> tab.</li>
+                    <li>Under "Build and deployment", select the <strong class="text-slate-200">main</strong> branch as the source and click <strong class="text-slate-200">Save</strong>.</li>
+                    <li>In 1–2 minutes, your website will go live at a URL like: <code class="text-primary-400 font-mono text-xs font-semibold bg-slate-900 p-1 rounded">https://[your-github-username].github.io/my-portfolio/</code>!</li>
+                </ol>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-800/80 bg-slate-950 py-6 text-center text-slate-500 text-xs space-y-2">
+        <p>&copy; 2026 Lakshmikanth Reddy. Built with pride to share with friends and classmates.</p>
+        <p class="flex items-center justify-center space-x-1">
+            <span>Made with</span>
+            <span class="text-red-500"><i class="fa-solid fa-heart"></i></span>
+            <span>from India</span>
+        </p>
+    </footer>
+
+    <!-- Interactive Scripts -->
+    <script>
+        // Tab switching logic
+        function switchTab(tabId) {
+            // Hide all tab contents
+            const contents = document.querySelectorAll('.tab-content');
+            contents.forEach(content => {
+                content.classList.remove('active');
+            });
+
+            // Deactivate all buttons
+            const buttons = document.querySelectorAll('.tab-btn');
+            buttons.forEach(btn => {
+                btn.classList.remove('text-primary-500', 'bg-slate-800/80');
+                btn.classList.add('text-slate-400', 'hover:text-slate-200');
+            });
+
+            // Show active tab
+            const activeTab = document.getElementById(`tab-${tabId}`);
+            if (activeTab) {
+                activeTab.classList.add('active');
+            }
+
+            // Style active button
+            const activeBtn = document.getElementById(`tab-btn-${tabId}`);
+            if (activeBtn) {
+                activeBtn.classList.remove('text-slate-400', 'hover:text-slate-200');
+                activeBtn.classList.add('text-primary-500', 'bg-slate-800/80');
+            }
+
+            // If entering the gaming tab, draw/resize the chessboard
+            if (tabId === 'gaming') {
+                drawChessboard();
+                checkAiTurn();
+            }
+        }
+
+        // Routine Slider State & Logic
+        const routineSteps = [
+            {
+                hour: "Morning (8:00 AM)",
+                title: "School Time at Carmel Academy",
+                desc: "Off I go to Carmel Academy. This is where learning happens, where I focus on studies, and enjoy hanging around classmates.",
+                icon: "<i class='fa-solid fa-school text-primary-400'></i>"
+            },
+            {
+                hour: "Late Afternoon",
+                title: "Coming Back Home",
+                desc: "School ends and I make my way back home, carrying a bag full of learnings and looking forward to relaxing.",
+                icon: "<i class='fa-solid fa-house-chimney text-amber-400'></i>"
+            },
+            {
+                hour: "Evening",
+                title: "Time to Play Cricket!",
+                desc: "I change into comfortable clothes and head out for an exciting session of cricket with local friends. Keeps me healthy & active!",
+                icon: "<i class='fa-solid fa-baseball-bat-ball text-emerald-400'></i>"
+            },
+            {
+                hour: "Post-Play",
+                title: "Studies & Homework Completion",
+                desc: "With a fresh mind, I set down at my study desk to write down all my school homework, revise my concepts, and learn about finance.",
+                icon: "<i class='fa-solid fa-book-open text-purple-400'></i>"
+            },
+            {
+                hour: "Night",
+                title: "Eating & Unwinding with Gaming",
+                desc: "After finishing my dinner, I reward myself by launching my favorite video games to relax and socialise with gaming buddies.",
+                icon: "<i class='fa-solid fa-gamepad text-pink-400'></i>"
+            },
+            {
+                hour: "Bedtime",
+                title: "Resting up for Tomorrow",
+                desc: "With a busy, fulfilling day complete, I switch off my devices and head directly to bed for deep, restoring sleep.",
+                icon: "<i class='fa-solid fa-moon text-blue-400'></i>"
+            }
+        ];
+
+        let activeStep = 1;
+
+        function setActiveHour(stepNum) {
+            activeStep = stepNum;
+            const data = routineSteps[stepNum - 1];
+
+            // Update Progress Bar
+            const percentage = ((stepNum - 1) / (routineSteps.length - 1)) * 100;
+            document.getElementById('routine-progress-bar').style.width = `${percentage}%`;
+
+            // Style active and inactive nodes
+            for (let i = 1; i <= routineSteps.length; i++) {
+                const node = document.getElementById(`hour-node-${i}`);
+                if (i <= stepNum) {
+                    node.classList.remove('bg-slate-800', 'text-slate-400');
+                    node.classList.add('bg-gradient-to-r', 'from-primary-600', 'to-secondary-600', 'text-white');
+                } else {
+                    node.classList.add('bg-slate-800', 'text-slate-400');
+                    node.classList.remove('bg-gradient-to-r', 'from-primary-600', 'to-secondary-600', 'text-white');
+                }
+            }
+
+            // Update details
+            document.getElementById('routine-icon').innerHTML = data.icon;
+            document.getElementById('routine-title').innerText = `${data.hour}: ${data.title}`;
+            document.getElementById('routine-desc').innerText = data.desc;
+        }
+
+        // Initialize Routine on load
+        setActiveHour(1);
+
+
+        // Cricket Scorer Widget States
+        let runs = 0;
+        let wickets = 0;
+        let balls = 0;
+
+        function addRuns(runValue) {
+            if (wickets >= 10) return; // Team All-out
+            runs += runValue;
+            balls++;
+            updateCricketUI();
+        }
+
+        function addWicket() {
+            if (wickets >= 10) return;
+            wickets++;
+            balls++;
+            updateCricketUI();
+        }
+
+        function resetScorer() {
+            runs = 0;
+            wickets = 0;
+            balls = 0;
+            updateCricketUI();
+        }
+
+        function updateCricketUI() {
+            document.getElementById('cricket-runs').innerText = runs;
+            document.getElementById('cricket-wickets').innerText = wickets;
+            
+            const oversCalculated = Math.floor(balls / 6);
+            const remainingBalls = balls % 6;
+            document.getElementById('cricket-overs').innerText = `${oversCalculated}.${remainingBalls}`;
+        }
+
+
+        // Finance Calculator Widget Logic
+        function calculateSavings() {
+            const monthlySaving = parseFloat(document.getElementById('finance-monthly').value) || 0;
+            const years = parseFloat(document.getElementById('finance-years').value) || 0;
+            const annualRate = parseFloat(document.getElementById('finance-rate').value) || 0;
+
+            const monthlyRate = (annualRate / 100) / 12;
+            const totalMonths = years * 12;
+
+            if (monthlySaving <= 0 || years <= 0) {
+                document.getElementById('finance-total').innerText = "₹0";
+                return;
+            }
+
+            let totalPortfolioValue = 0;
+            if (monthlyRate === 0) {
+                totalPortfolioValue = monthlySaving * totalMonths;
+            } else {
+                totalPortfolioValue = monthlySaving * ((Math.pow(1 + monthlyRate, totalMonths) - 1) / monthlyRate) * (1 + monthlyRate);
+            }
+
+            const formattedVal = Math.round(totalPortfolioValue).toLocaleString('en-IN');
+            document.getElementById('finance-total').innerText = `₹${formattedVal}`;
+        }
+
+        // Collapsible deploy guide
+        function toggleDeployGuide() {
+            const guide = document.getElementById('deploy-guide');
+            const arrow = document.getElementById('guide-arrow');
+            if (guide.classList.contains('hidden')) {
+                guide.classList.remove('hidden');
+                arrow.style.transform = 'rotate(180deg)';
+            } else {
+                guide.classList.add('hidden');
+                arrow.style.transform = 'rotate(0deg)';
+            }
+        }
+
+
+        /* ================= CHESS GAME LOGIC ENGINE ================= */
+        const chess = new Chess();
+        let selectedSquare = null;
+        let boardFlipped = false;
+        let currentTheme = 'violet';
+        
+        // Mode & AI configs
+        let opponentMode = 'ai'; // 'ai' or 'local'
+        let playerColor = 'w';    // 'w' or 'b'
+        let isAiThinking = false;
+
+        // Chess pieces Unicode symbols
+        const pieceSymbols = {
+            'p': '♟', 'r': '♜', 'n': '♞', 'b': '♝', 'q': '♛', 'k': '♚',
+            'P': '♙', 'R': '♖', 'N': '♘', 'B': '♗', 'Q': '♕', 'K': '♔'
+        };
+
+        // Static Evaluation values for computer minimax engine
+        const pieceValues = { p: 10, n: 30, b: 30, r: 50, q: 90, k: 9000 };
+
+        function drawChessboard() {
+            const boardElement = document.getElementById('chessboard');
+            boardElement.innerHTML = '';
+
+            const themeLightClass = currentTheme === 'emerald' ? 'square-light-emerald' : 'square-light-violet';
+            const themeDarkClass = currentTheme === 'emerald' ? 'square-dark-emerald' : 'square-dark-violet';
+
+            // Loop 8x8 squares. Depend on boardFlipped state to invert sequence
+            const rows = boardFlipped ? [0, 1, 2, 3, 4, 5, 6, 7] : [7, 6, 5, 4, 3, 2, 1, 0];
+            const cols = boardFlipped ? [7, 6, 5, 4, 3, 2, 1, 0] : [0, 1, 2, 3, 4, 5, 6, 7];
+
+            for (let r of rows) {
+                for (let c of cols) {
+                    const colName = String.fromCharCode(97 + c); // 'a' to 'h'
+                    const rowName = (r + 1).toString(); // '1' to '8'
+                    const squareName = `${colName}${rowName}`;
+
+                    const squareData = chess.get(squareName);
+
+                    // Create the HTML square element
+                    const sqElement = document.createElement('div');
+                    sqElement.className = `chess-square ${((r + c) % 2 === 0) ? themeDarkClass : themeLightClass}`;
+                    sqElement.id = `square-${squareName}`;
+                    sqElement.setAttribute('onclick', `handleSquareClick('${squareName}')`);
+
+                    // Check valid moves highlight
+                    if (selectedSquare) {
+                        const moves = chess.moves({ square: selectedSquare, verbose: true });
+                        if (moves.some(m => m.to === squareName)) {
+                            sqElement.classList.add('square-valid-dest');
+                        }
+                    }
+
+                    if (selectedSquare === squareName) {
+                        sqElement.classList.add('square-selected');
+                    }
+
+                    // Place pieces if they exist
+                    if (squareData) {
+                        const pieceSymbol = pieceSymbols[squareData.color === 'w' ? squareData.type.toUpperCase() : squareData.type.toLowerCase()];
+                        
+                        const pieceContainer = document.createElement('span');
+                        pieceContainer.className = `chess-piece ${squareData.color === 'w' ? 'text-white drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]' : 'text-slate-950'}`;
+                        pieceContainer.innerHTML = pieceSymbol;
+                        
+                        sqElement.appendChild(pieceContainer);
+                    }
+
+                    boardElement.appendChild(sqElement);
+                }
+            }
+
+            updateChessStatus();
+        }
+
+        function handleSquareClick(squareName) {
+            // Block all input if AI is currently calculating
+            if (isAiThinking) return;
+
+            const piece = chess.get(squareName);
+            const activeTurn = chess.turn();
+
+            // If vs Computer, enforce that human can only move playerColor
+            if (opponentMode === 'ai' && activeTurn !== playerColor) {
+                return; 
+            }
+
+            if (selectedSquare === null) {
+                // Select a piece matching current player's turn color
+                if (piece && piece.color === activeTurn) {
+                    selectedSquare = squareName;
+                    drawChessboard();
+                }
+            } else {
+                // If clicked selected square again, deselect
+                if (selectedSquare === squareName) {
+                    selectedSquare = null;
+                    drawChessboard();
+                    return;
+                }
+
+                // Check if move is valid in chess.js rules
+                const moveResult = chess.move({
+                    from: selectedSquare,
+                    to: squareName,
+                    promotion: 'q' // default promotion to queen
+                });
+
+                if (moveResult) {
+                    // Valid Move Played
+                    selectedSquare = null;
+                    drawChessboard();
+                    updateMovesHistory();
+                    
+                    // Trigger AI opponent if in AI mode
+                    checkAiTurn();
+                } else {
+                    // If player clicked another of their own pieces, change selection
+                    if (piece && piece.color === activeTurn) {
+                        selectedSquare = squareName;
+                        drawChessboard();
+                    } else {
+                        // Invalid Move, deselect
+                        selectedSquare = null;
+                        drawChessboard();
+                    }
+                }
+            }
+        }
+
+        // Detect if it's the computer's turn to play
+        function checkAiTurn() {
+            if (opponentMode === 'ai' && chess.turn() !== playerColor && !chess.game_over()) {
+                isAiThinking = true;
+                
+                // Show thinking indicators
+                document.getElementById('thinking-overlay').classList.remove('opacity-0', 'pointer-events-none');
+                document.getElementById('status-dot').className = 'w-3.5 h-3.5 rounded-full bg-violet-500 animate-pulse';
+                document.getElementById('turn-indicator').innerText = "AI is thinking...";
+                document.getElementById('btn-undo').disabled = true;
+
+                // Add small delay for realistic feeling
+                setTimeout(() => {
+                    makeAiMove();
+                }, 550);
+            }
+        }
+
+        /* LIGHTWEIGHT CHESS ENGINE (MINIMAX) */
+        function evaluateBoard(game) {
+            let score = 0;
+            const board = game.board();
+            for (let r = 0; r < 8; r++) {
+                for (let c = 0; c < 8; c++) {
+                    const piece = board[r][c];
+                    if (piece) {
+                        const val = pieceValues[piece.type];
+                        score += (piece.color === 'w' ? val : -val);
+                    }
+                }
+            }
+            return score;
+        }
+
+        function minimax(game, depth, alpha, beta, isMaximizing) {
+            if (depth === 0 || game.game_over()) {
+                return { score: evaluateBoard(game) };
+            }
+
+            const moves = game.moves({ verbose: true });
+            
+            // Heuristic sorting: process captures first to speed up alpha-beta pruning
+            moves.sort((a, b) => {
+                const aVal = a.captured ? pieceValues[a.captured] : 0;
+                const bVal = b.captured ? pieceValues[b.captured] : 0;
+                return bVal - aVal;
+            });
+
+            let bestMove = null;
+
+            if (isMaximizing) {
+                let maxScore = -Infinity;
+                for (let move of moves) {
+                    game.move(move);
+                    const evaluation = minimax(game, depth - 1, alpha, beta, false);
+                    game.undo();
+                    if (evaluation.score > maxScore) {
+                        maxScore = evaluation.score;
+                        bestMove = move;
+                    }
+                    alpha = Math.max(alpha, evaluation.score);
+                    if (beta <= alpha) break;
+                }
+                return { score: maxScore, move: bestMove };
+            } else {
+                let minScore = Infinity;
+                for (let move of moves) {
+                    game.move(move);
+                    const evaluation = minimax(game, depth - 1, alpha, beta, true);
+                    game.undo();
+                    if (evaluation.score < minScore) {
+                        minScore = evaluation.score;
+                        bestMove = move;
+                    }
+                    beta = Math.min(beta, evaluation.score);
+                    if (beta <= alpha) break;
+                }
+                return { score: minScore, move: bestMove };
+            }
+        }
+
+        function makeAiMove() {
+            if (chess.game_over()) {
+                isAiThinking = false;
+                return;
+            }
+
+            const diff = document.getElementById('ai-difficulty').value;
+            // Depth 1 for Easy, Depth 2 for Medium (excellent balance of intelligence/speed)
+            const depth = diff === 'medium' ? 2 : 1; 
+
+            // White wants to maximize score, Black wants to minimize score
+            const isMaximizing = (playerColor === 'b'); 
+            const decision = minimax(chess, depth, -Infinity, Infinity, isMaximizing);
+
+            if (decision.move) {
+                chess.move(decision.move);
+            } else {
+                // Fallback to random if minimax fails to find a move
+                const randomMoves = chess.moves();
+                if (randomMoves.length > 0) {
+                    chess.move(randomMoves[Math.floor(Math.random() * randomMoves.length)]);
+                }
+            }
+
+            isAiThinking = false;
+            
+            // Hide thinking indicators
+            document.getElementById('thinking-overlay').classList.add('opacity-0', 'pointer-events-none');
+            document.getElementById('status-dot').className = 'w-3.5 h-3.5 rounded-full bg-emerald-500 animate-pulse';
+            document.getElementById('btn-undo').disabled = false;
+
+            drawChessboard();
+            updateMovesHistory();
+        }
+
+        function updateChessStatus() {
+            const turnInd = document.getElementById('turn-indicator');
+            const statusMsg = document.getElementById('chess-status-msg');
+
+            const isWhiteTurn = chess.turn() === 'w';
+
+            if (!isAiThinking) {
+                turnInd.innerText = isWhiteTurn ? "White's Turn" : "Black's Turn";
+            }
+
+            if (chess.in_checkmate()) {
+                statusMsg.innerText = `Checkmate! ${isWhiteTurn ? 'Black' : 'White'} wins! 🎉`;
+                statusMsg.className = "bg-red-500/10 p-3 rounded-lg text-xs font-semibold border border-red-500/20 text-center text-red-400";
+            } else if (chess.in_draw() || chess.in_stalemate() || chess.in_threefold_repetition()) {
+                statusMsg.innerText = "Game Draw! Good fight! 🤝";
+                statusMsg.className = "bg-amber-500/10 p-3 rounded-lg text-xs font-semibold border border-amber-500/20 text-center text-amber-400";
+            } else if (chess.in_check()) {
+                statusMsg.innerText = "Check! Stay sharp! ⚠️";
+                statusMsg.className = "bg-amber-500/10 p-3 rounded-lg text-xs font-semibold border border-amber-500/20 text-center text-amber-400 animate-pulse";
+            } else {
+                statusMsg.innerText = isAiThinking ? "Heuristics evaluating tactical lines..." : "Battle underway. No check currently.";
+                statusMsg.className = "bg-slate-950/80 p-3 rounded-lg text-xs font-semibold border border-slate-800 text-center text-emerald-400";
+            }
+        }
+
+        function updateMovesHistory() {
+            const listElement = document.getElementById('chess-move-list');
+            listElement.innerHTML = '';
+
+            const history = chess.history({ verbose: true });
+            
+            // Loop moves in pairs
+            for (let i = 0; i < history.length; i += 2) {
+                const moveNum = Math.floor(i / 2) + 1;
+                const whiteMove = history[i] ? `${history[i].from}→${history[i].to}` : '';
+                const blackMove = history[i+1] ? `${history[i+1].from}→${history[i+1].to}` : '';
+
+                const li = document.createElement('li');
+                li.className = "col-span-1 flex justify-between border-b border-slate-900 py-1";
+                li.innerHTML = `<span>${moveNum}. <span class="text-white">${whiteMove}</span></span> <span class="text-slate-500">${blackMove}</span>`;
+                listElement.appendChild(li);
+            }
+
+            // Auto Scroll the log container to the bottom
+            const scrollContainer = listElement.parentElement;
+            scrollContainer.scrollTop = scrollContainer.scrollHeight;
+        }
+
+        // UI Handlers for Game Settings
+        function changeOpponentMode() {
+            opponentMode = document.getElementById('opponent-mode').value;
+            const subSettings = document.getElementById('ai-settings-sub');
+            
+            if (opponentMode === 'ai') {
+                subSettings.classList.remove('hidden');
+            } else {
+                subSettings.classList.add('hidden');
+            }
+            resetChessGame();
+        }
+
+        function changePlayerColor() {
+            playerColor = document.getElementById('player-color-choice').value;
+            
+            // Automatically align board view so player pieces are always on bottom
+            boardFlipped = (playerColor === 'b');
+            resetChessGame();
+        }
+
+        function resetChessGame() {
+            chess.reset();
+            selectedSquare = null;
+            isAiThinking = false;
+            document.getElementById('thinking-overlay').classList.add('opacity-0', 'pointer-events-none');
+            document.getElementById('btn-undo').disabled = false;
+            
+            drawChessboard();
+            updateMovesHistory();
+            
+            // If playing as Black vs AI, computer must make the first move
+            checkAiTurn();
+        }
+
+        function undoChessMove() {
+            if (isAiThinking) return;
+
+            if (opponentMode === 'ai') {
+                // Undo twice (AI's move + Player's move)
+                chess.undo();
+                chess.undo();
+            } else {
+                chess.undo();
+            }
+            selectedSquare = null;
+            drawChessboard();
+            updateMovesHistory();
+        }
+
+        function flipChessBoard() {
+            boardFlipped = !boardFlipped;
+            drawChessboard();
+        }
+
+        function changeBoardTheme() {
+            currentTheme = document.getElementById('board-theme').value;
+            drawChessboard();
+        }
+
+
+        /* ================= SHARING & TOAST SYSTEM ================= */
+        function triggerToast(message, isError = false) {
+            const toast = document.getElementById('toast-notification');
+            const icon = document.getElementById('toast-icon');
+            const text = document.getElementById('toast-message');
+
+            if (isError) {
+                icon.innerHTML = `<i class="fa-solid fa-circle-exclamation"></i>`;
+                icon.className = "text-red-500 text-lg";
+            } else {
+                icon.innerHTML = `<i class="fa-solid fa-circle-check"></i>`;
+                icon.className = "text-emerald-500 text-lg";
+            }
+
+            text.innerText = message;
+
+            // Animate In
+            toast.classList.remove('translate-y-20', 'opacity-0', 'pointer-events-none');
+            toast.classList.add('translate-y-0', 'opacity-100');
+
+            // Timeout to Animate Out
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0', 'pointer-events-none');
+                toast.classList.remove('translate-y-0', 'opacity-100');
+            }, 3000);
+        }
+
+        function copyChallengeLink() {
+            const dummyInput = document.createElement('textarea');
+            dummyInput.value = "Hey! Let's play Chess together. Challenge me by opening this: " + window.location.href.split('?')[0] + "?tab=gaming";
+            document.body.appendChild(dummyInput);
+            dummyInput.select();
+            
+            try {
+                const successful = document.execCommand('copy');
+                if (successful) {
+                    triggerToast("Chess Invitation Link copied to clipboard!");
+                } else {
+                    triggerToast("Failed to copy link. Try copying it manually.", true);
+                }
+            } catch (err) {
+                triggerToast("Copy action error.", true);
+            }
+            
+            document.body.removeChild(dummyInput);
+        }
+
+
+        /* ================= CALENDAR SCHEDULER SYSTEM ================= */
+        function getSchedulerData() {
+            const name = document.getElementById('sched-name').value.trim() || 'Friend';
+            const dateStr = document.getElementById('sched-date').value;
+            const timeStr = document.getElementById('sched-time').value;
+            const platform = document.getElementById('sched-platform').value;
+
+            if (!dateStr || !timeStr) {
+                triggerToast("Please pick a Date and Time for the chess match!", true);
+                return null;
+            }
+
+            const startDateTime = new Date(`${dateStr}T${timeStr}`);
+            // Set default game duration to 1 hour
+            const endDateTime = new Date(startDateTime.getTime() + 60 * 60 * 1000);
+
+            return { name, startDateTime, endDateTime, platform };
+        }
+
+        // Generate and navigate to direct Google Calendar appointment
+        function generateGoogleCalendarInvite() {
+            const data = getSchedulerData();
+            if (!data) return;
+
+            const formatGoogleDate = (date) => {
+                return date.toISOString().replace(/-|:|\.\d\d\d/g, "");
+            };
+
+            const gDates = `${formatGoogleDate(data.startDateTime)}/${formatGoogleDate(data.endDateTime)}`;
+            const details = encodeURIComponent(`Friendly chess battle with Lakshmikanth Reddy! Match location/platform: ${data.platform}. Scheduled by: ${data.name}`);
+            const title = encodeURIComponent(`Chess Match with Lakshmikanth Reddy`);
+
+            const gCalUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${gDates}&details=${details}&sf=true&output=xml`;
+
+            window.open(gCalUrl, '_blank');
+            triggerToast("Redirecting to Google Calendar...");
+        }
+
+        // Create and Download universal .ics file
+        function downloadICSInvite() {
+            const data = getSchedulerData();
+            if (!data) return;
+
+            const formatICSDate = (date) => {
+                return date.toISOString().replace(/-|:|\.\d\d\d/g, "");
+            };
+
+            const uid = `chess-${Date.now()}@lakshmikanth.reddy`;
+            const stamp = formatICSDate(new Date());
+            const start = formatICSDate(data.startDateTime);
+            const end = formatICSDate(data.endDateTime);
+
+            const icsContent = [
+                "BEGIN:VCALENDAR",
+                "VERSION:2.0",
+                "PRODID:-//Lakshmikanth Reddy//Chess Match Invite//EN",
+                "BEGIN:VEVENT",
+                `UID:${uid}`,
+                `DTSTAMP:${stamp}`,
+                `DTSTART:${start}`,
+                `DTEND:${end}`,
+                `SUMMARY:Chess Match with Lakshmikanth Reddy`,
+                `DESCRIPTION:A scheduled battle of minds on the chessboard! Platform chosen: ${data.platform}. Prepared by: ${data.name}`,
+                `LOCATION:${data.platform}`,
+                "STATUS:CONFIRMED",
+                "END:VEVENT",
+                "END:VCALENDAR"
+            ].join("\r\n");
+
+            const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+            const link = document.createElement('a');
+            link.href = window.URL.createObjectURL(blob);
+            link.setAttribute('download', `chess-match-with-lakshmikanth.ics`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            triggerToast("Calendar Invite (.ics) Downloaded!");
+        }
+
+        // Deep link tab handler on page load
+        window.addEventListener('load', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const tabParam = urlParams.get('tab');
+            if (tabParam === 'gaming') {
+                switchTab('gaming');
+            }
+        });
+    </script>
+</body>
+</html>
